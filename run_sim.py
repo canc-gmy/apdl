@@ -11,14 +11,14 @@ from src.apdl import create_model_and_solve_simply_supported_edges
 
 
 cwd = Path(os.getcwd())
-rst = cwd / "rst"
+rst = cwd / "test"
 rst.mkdir(exist_ok=True)
 
-csv = cwd / "sim"
+csv = cwd / "test"
 csv.mkdir(exist_ok=True)
 
 
-# mapdl = launch_mapdl()
+mapdl = launch_mapdl()
 
 # for xi in np.arange(0.006, 0.1, 0.006):
 #     for eta in np.arange(0.006, 0.1, 0.006):
@@ -29,8 +29,19 @@ csv.mkdir(exist_ok=True)
 #         extract_shell_layer_to_parquet(rst / f"sim_{xi:.3f}_{eta:.3f}.rst", csv / f"sim_{xi:.3f}_{eta:.3f}.parquet", "Top")
 #         mapdl.db.clear()
 
-# mapdl.exit()
+xi = 0.6
+eta = 0.3
 
-for xi in np.arange(0.006, 0.1, 0.006):
-    for eta in np.arange(0.006, 0.1, 0.006):
-        extract_shell_layer_to_parquet(rst / f"sim_{xi:.3f}_{eta:.3f}.rst", csv / f"sim_{xi:.3f}_{eta:.3f}.parquet", "Top")
+create_model_and_solve_simply_supported_edges(mapdl, xi, eta)
+mapdl.db.save(rst / f"sim_{xi:.3f}_{eta:.3f}.db", "ALL")
+mapdl.post1()
+mapdl.reswrite(rst / f"sim_{xi:.3f}_{eta:.3f}")
+extract_shell_layer_to_parquet(rst / f"sim_{xi:.3f}_{eta:.3f}.rst", csv / f"sim_{xi:.3f}_{eta:.3f}.parquet", "Top")
+mapdl.db.clear()
+
+
+mapdl.exit()
+
+# for xi in np.arange(0.006, 0.1, 0.006):
+#     for eta in np.arange(0.006, 0.1, 0.006):
+#         extract_shell_layer_to_parquet(rst / f"sim_{xi:.3f}_{eta:.3f}.rst", csv / f"sim_{xi:.3f}_{eta:.3f}.parquet", "Top")

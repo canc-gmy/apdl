@@ -1,5 +1,3 @@
-from os import read
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
@@ -13,56 +11,41 @@ try:
 except Exception as e:
     print(f"Could not enable LaTeX rendering: {e}\nFalling back to default.")
 
-a = pd.read_csv(r"C:\Users\rossi\Documents\tesi\apdl\csv\plate.csv")
-s = pd.read_csv(r"C:\Users\rossi\Documents\tesi\apdl\csv\test_01.csv")
+data = pd.read_parquet(r"C:\Users\rossi\Documents\tesi\apdl\sim\sim_0.006_0.024.parquet")
+t = 0.001
 
-# plt.figure(figsize=(10, 8))
-# scatter = plt.scatter(
-#     a["X"], 
-#     a["Y"], 
-#     c=abs((s["EXX"]-a["EXX"])/a["EXX"]), 
-#     cmap="jet", 
-#     s=20,        # Size of the points, adjust based on mesh density
-#     edgecolors='none'
-# )
+delta = 0.002
+Y = 0.035
+line_data = data.query(f'abs(((X - 0.001)) % @delta < 1e-6 | abs((X - 0.001) % @delta - @delta) < 1e-6) & Y == @Y')
+curvature_line = -line_data['EXX']/t
+z_disp = np.cumsum(np.cumsum(curvature_line.values) * delta) * delta # double integral
+z_disp = z_disp - z_disp[-1] / np.max(line_data['X'].unique()) * line_data['X'].unique() # boudary condition z[a] == 0
 
-# plt.colorbar(scatter, label="Absolute Difference in EXX Strain")
-# plt.xlabel("X Coordinate")
-# plt.ylabel("Y Coordinate")
-# plt.title("Scatter Plot of Absolute Difference in EXX Strain at Element Centroids")
-# plt.axis("equal") # Ensures the geometry isn't distorted
-# plt.grid(True, linestyle='--', alpha=0.6)
 
-# plt.tight_layout()
-# plt.show()
+fig, ax = plt.subplots(figsize=(13, 5))
 
-# --- New plot with pcolormesh ---
-plt.figure(figsize=(10, 8))
+ax.plot(line_data['X'].unique(), line_data['Z'], 
+         label='Reference Deflection', 
+         color='black', 
+         linestyle='--', 
+         linewidth=2)
 
-# Prepare data for pivoting
-diff_df = pd.DataFrame({
-    'X': a['X'],
-    'Y': a['Y'],
-    'plot': abs((s['EXY'] - a['EXY']))
-})
+# Plot 2: Calculated Data from Strain
+ax.plot(line_data['X'].unique(), z_disp, 
+         label='Calculated Deflection', 
+         color='purple', 
+         linewidth=2)
 
-# Pivot the dataframe to get a 2D grid of the difference values
-diff_pivot = diff_df.pivot(index='Y', columns='X', values='plot')
+# Titles and Axis Labels
+# (Note: Update 'm' to 'mm' or 'in' if your data uses different units)
+ax.set_title('Plate line Deflection Profile: FEM vs. Strain-Derived' + f'($\\delta = {delta:.3f}; y = {Y:.3f})$', fontsize=14, pad=15)
+ax.set_xlabel(r"$x$ Coordinate $\left[\mathrm{m}\right]$")
+ax.set_ylabel(r"$z$ Coordinate $\left[\mathrm{m}\right]$")
 
-x_coords = diff_pivot.columns.to_numpy()
-y_coords = diff_pivot.index.to_numpy()
-C = diff_pivot.to_numpy()
+# Grid and Legend
+ax.grid(True, linestyle=':', alpha=0.7)
+ax.legend(loc='best', fontsize=11, framealpha=0.9)
 
-X_mesh, Y_mesh = np.meshgrid(x_coords, y_coords)
-
-colormesh = plt.pcolormesh(X_mesh, Y_mesh, C, cmap="jet", shading='auto', rasterized=True)
-
-plt.colorbar(colormesh, label="Absolute Difference in EXY Strain")
-plt.xlabel("X Coordinate")
-plt.ylabel("Y Coordinate")
-plt.title("Colormesh of Absolute Difference in EXY Strain at Element Centroids")
-plt.axis("equal") # Ensures the geometry isn't distorted
-plt.grid(True, linestyle='--', alpha=0.6)
-
+# Clean up layout margins and render
 plt.tight_layout()
 plt.show()

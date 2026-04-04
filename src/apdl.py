@@ -134,7 +134,7 @@ def create_model_and_solve_simply_supported_edges(mapdl: Mapdl, x_force: float, 
     mapdl.nsel(type_="R", item="LOC", comp="Y", vmin=str(y_force))
 
     # Intensity of z-component of force [N]
-    fz = 1
+    fz = 10
     mapdl.f("ALL", "FZ", -fz)
 
     # ==========================================================================

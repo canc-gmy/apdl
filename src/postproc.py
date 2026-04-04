@@ -119,7 +119,7 @@ def extract_shell_layer_to_parquet(rst_path, csv_output_path, layer_type="Top"):
     df.insert(1, "Y", pd.Series(np.round(layer_centroids_field.data[:, 1], 3), index=elem_ids))
     
     # Insert Elemental Z Displacement (Component index 2 is Z)
-    df.insert(2, "Z", pd.Series(np.round(disp_elem_field_rescoped.data[:, 2], 5), index=elem_ids))
+    df.insert(2, "Z", pd.Series(disp_elem_field_rescoped.data[:, 2], index=elem_ids))
 
     df.index.name = "Element ID"
     df.to_parquet(csv_output_path)
